@@ -13,6 +13,28 @@ A real-time collaborative Kanban board. Several people can work on the same boar
 - Field-level conflict detection (HTTP 409) for concurrent edits of the same field
 - A development and demo failure switch for seeing rollbacks
 
+## Screenshots
+
+**Board:** four columns, priority badges, assignees and last-updated times.
+
+![Board](docs/screenshots/board.png)
+
+**Real-time collaboration:** a task created in one browser appears in the other instantly, without a reload.
+
+![Two clients side by side](docs/screenshots/collaboration.png)
+
+| Drag and drop with an insertion placeholder | Rollback after a failed request |
+| --- | --- |
+| ![Dragging](docs/screenshots/dragging.png) | ![Rollback](docs/screenshots/rollback.png) |
+
+| Task detail drawer | Concurrent edit warning |
+| --- | --- |
+| ![Task drawer](docs/screenshots/task-drawer.png) | ![Conflict warning](docs/screenshots/conflict-warning.png) |
+
+| Create task | Search and filters, restored from `?search=pay&priority=high` | Mobile |
+| --- | --- | --- |
+| ![Create task](docs/screenshots/create-task.png) | ![Filters](docs/screenshots/filters.png) | ![Mobile](docs/screenshots/mobile.png) |
+
 ---
 
 ## Tech stack
@@ -213,6 +235,7 @@ Create both databases once (`CREATE DATABASE kanban_test; CREATE DATABASE kanban
 
 The app deploys as **one service**: the Express API also serves the built React app, so there's no CORS and a relative `/api` URL. The database is managed PostgreSQL.
 
+- **AWS (EC2 + RDS):** see the step-by-step guide in [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md).
 - **Docker:** `docker build -t flowboard .`, then run it with `DATABASE_URL` set. The container runs `prisma migrate deploy` and then `node dist/server.js`.
 - **Render (blueprint included):** in the dashboard choose *New → Blueprint*, then pick this repo. [`render.yaml`](render.yaml) creates the web service and a Postgres database and wires up `DATABASE_URL`.
 - **Other hosts** (Railway, Fly.io, …): build with `npm ci && npm run build`, start with `npm run db:deploy && npm start`, and set `DATABASE_URL`.
