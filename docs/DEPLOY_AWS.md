@@ -134,22 +134,45 @@ Press **Ctrl+C** to stop watching the logs. The app keeps running, and it restar
 2. In your browser, go to **`http://<that-address>`**. Type `http://` yourself; there's no HTTPS, so the browser will say "Not secure". That's expected.
 3. Check `http://<that-address>/api/health`. It should return `{"ok":true,...}`.
 4. Open the site in **two browser windows**, or one normal and one private. Create a task in one, and it should appear in the other immediately.
-5. Put this URL in the README under **Deployed app**.
+5. Put this URL in the README under **Live app**, or do Step 9 first and use the HTTPS domain instead.
 
 > **Optional, but recommended before you submit:** the public IP changes if the server is stopped and started again. To keep it fixed, go to **EC2 → Elastic IPs → Allocate Elastic IP address → Allocate**, then **Actions → Associate Elastic IP address**, and pick `flowboard-server`. Use the Elastic IP as your URL.
 
 ---
 
+## Step 9 (optional): Add a domain name and HTTPS
+
+HTTPS certificates are issued for domain names, not bare IP addresses, so you need a name first.
+
+1. **Fix the IP address.** Go to **EC2 → Elastic IPs → Allocate Elastic IP address → Allocate**. Then select the new IP → **Actions → Associate Elastic IP address**, and pick the instance from the dropdown (`i-…` / `flowboard-server`). Your server now uses this new IP.
+2. **Get a free domain.** Sign in at **duckdns.org**, add a subdomain (e.g. `flowboard-bala`), set **current ip** to your Elastic IP, and click **update ip**.
+3. **Open port 443.** Go to **EC2 → Instances → flowboard-server → Security tab** and click the security group (`launch-wizard-1`). Choose **Edit inbound rules → Add rule**, set Type **HTTPS** and Source **Anywhere-IPv4**, and save. Keep the **HTTP** rule: you should end up with exactly one HTTP, one HTTPS and one SSH rule.
+4. **Put Caddy in front of the app.** Replace the domain with yours:
+   ```bash
+   sudo docker rm -f flowboard
+   sudo docker run -d --name flowboard --restart unless-stopped -p 127.0.0.1:4000:4000 --env-file ~/flowboard.env flowboard
+   sudo docker run -d --name caddy --restart unless-stopped --network host -v caddy_data:/data caddy:2 \
+     caddy reverse-proxy --from flowboard-bala.duckdns.org --to localhost:4000
+   sudo docker logs -f caddy       # wait for "certificate obtained successfully", then Ctrl+C
+   ```
+5. Open **https://your-name.duckdns.org**. You'll see a padlock, and `http://` redirects to `https://`. After this, the bare IP address no longer serves the site; use the domain.
+
+---
+
 ## Updating after you push new code
 
-From the EC2 terminal (Step 3):
+From the EC2 terminal (Step 3), rebuild and restart only the app container. Caddy keeps running.
 
 ```bash
 cd ~/flowboard && git pull
 sudo docker build -t flowboard .
 sudo docker rm -f flowboard
-sudo docker run -d --name flowboard --restart unless-stopped -p 80:4000 --env-file ~/flowboard.env flowboard
+# With Caddy (Step 9 done):
+sudo docker run -d --name flowboard --restart unless-stopped -p 127.0.0.1:4000:4000 --env-file ~/flowboard.env flowboard
+# Without Caddy, use -p 80:4000 instead of -p 127.0.0.1:4000:4000
 ```
+
+Changes that only touch documentation (README, docs) don't need a redeploy.
 
 ---
 

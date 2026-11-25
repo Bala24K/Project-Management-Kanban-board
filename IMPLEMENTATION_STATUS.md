@@ -29,7 +29,7 @@ _Last updated: 2026-11-25_
 
 ## Remaining work
 
-- Optional: a custom domain and HTTPS for the live app.
+- None.
 
 ## Known bugs / limitations
 
@@ -51,12 +51,15 @@ _Last updated: 2026-11-25_
 
 ## Deployment status
 
-**Deployed: <http://13.54.153.21>** on AWS (ap-southeast-2):
+**Deployed: <https://flowboard-bala.duckdns.org>** on AWS (ap-southeast-2):
 - an EC2 `t3.micro` instance with an Elastic IP, running the Docker image,
+- Caddy in front of the app, providing automatic Let's Encrypt HTTPS,
+- a DuckDNS domain pointing at the Elastic IP,
 - an RDS PostgreSQL `db.t4g.micro` database, private and reached over SSL.
 
 Checked on the public URL:
-- `/api/health` responds,
+- `/api/health` responds over HTTPS with a valid certificate,
+- HTTP redirects to HTTPS (308),
 - `/api/board` serves data from RDS,
-- the SSE stream connects (`hello` and `presence` events),
-- the board UI loads in the browser with the live-connection indicator showing "Live".
+- the SSE stream works through Caddy (`hello` and `presence` events),
+- in the browser, the board loads, the live-connection indicator shows "Live", and two windows sync.

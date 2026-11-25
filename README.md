@@ -2,9 +2,9 @@
 
 A real-time collaborative Kanban board. Several people can work on the same board at once: changes appear instantly for the person making them (optimistic UI) and stream to everyone else over Server-Sent Events, without reloading the page.
 
-**Live app:** **<http://13.54.153.21>**
+**Live app:** **<https://flowboard-bala.duckdns.org>**
 
-The app runs on AWS: an EC2 server in Sydney running Docker, with an RDS PostgreSQL database. Open it in two browser windows to see changes sync in real time. Use the **Simulate API failures** switch in the header to see rollback.
+The app runs on AWS: an EC2 server in Sydney running Docker, with an RDS PostgreSQL database, served over HTTPS. Open it in two browser windows to see changes sync in real time. Use the **Simulate API failures** switch in the header to see rollback. [How to try it](#try-it-as-a-user) walks through each feature.
 
 - Four columns in fixed order: **Backlog → Todo → In Progress → Done**
 - Create, edit, and delete tasks. Click a card to edit it in a detail drawer.
@@ -36,6 +36,50 @@ The app runs on AWS: an EC2 server in Sydney running Docker, with an RDS Postgre
 | Create task | Search and filters, restored from `?search=pay&priority=high` | Mobile |
 | --- | --- | --- |
 | ![Create task](docs/screenshots/create-task.png) | ![Filters](docs/screenshots/filters.png) | ![Mobile](docs/screenshots/mobile.png) |
+
+## Try it as a user
+
+Open **<https://flowboard-bala.duckdns.org>** in **two browser windows** side by side, for example one normal window and one private window. The header should say **Live · 1 other viewing**.
+
+| # | Feature | What to do | What you should see |
+| --- | --- | --- | --- |
+| 1 | Create | Click **New task**, fill in the title, priority and assignee, then click **Create task** | The card appears instantly in Backlog, and in the other window too, without a reload |
+| 2 | Edit | Click a card, change the description, priority, assignee or status, then click **Save** | The card updates immediately, in both windows |
+| 3 | Drag between columns | Drag a card from Todo to In Progress | A dashed placeholder shows where it will land. The other window shows the move. |
+| 4 | Reorder | Drag a card above another card in the same column, then refresh the page | The new order stays after the refresh (it's saved in the database) |
+| 5 | Keyboard drag | Tab to a card, press **Space**, use the arrow keys, then press **Space** again | The card moves without a mouse. **Enter** opens the details. |
+| 6 | Search and filters | Type in the search box, then pick a priority and an assignee | Only matching cards show, and the URL becomes `?search=…&priority=…&assignee=…` |
+| 7 | URL state | Refresh the page, then press the browser's Back button | The filters are restored after the refresh, and Back returns to the previous filters |
+| 8 | Rollback | Tick **Simulate API failures**, then drag a card or edit a task | The change appears, then reverts, with an error message saying it was rolled back. Untick the box when done. |
+| 9 | Concurrent edit | In window A, open a task and change its title without saving. In window B, rename the same task and save. | Window A keeps your typed text and shows "Someone else changed this… Use theirs". Saving in A shows a conflict message. |
+| 10 | Remote delete | Open a task in window A, then delete it in window B | Window A's drawer says "This task was deleted" |
+| 11 | Reconnect | Turn off your Wi-Fi for a few seconds, then turn it back on | The indicator shows **Reconnecting…**, then **Live**, and changes made meanwhile appear |
+
+### Command cheat-sheet
+
+Full details are in [Running locally](#running-locally) and [Scripts](#scripts).
+
+```bash
+# Run locally (needs Node 20+ and PostgreSQL)
+npm install
+cp .env.example apps/api/.env      # set DATABASE_URL
+npm run db:migrate                 # create tables
+npm run db:seed                    # optional demo data
+npm run dev                        # http://localhost:5173
+
+# Check and test
+npm run typecheck                  # TypeScript, all packages
+npm test                           # API (real Postgres) + web tests
+npx playwright install chromium    # once
+npm run test:e2e                   # browser tests, real API + DB, two clients
+
+# Production
+npm run build && npm run db:deploy && npm start     # http://localhost:4000
+
+# Check the live deployment
+curl https://flowboard-bala.duckdns.org/api/health
+curl -N https://flowboard-bala.duckdns.org/api/events    # live event stream (Ctrl+C to stop)
+```
 
 ---
 
@@ -237,7 +281,11 @@ Create both databases once (`CREATE DATABASE kanban_test; CREATE DATABASE kanban
 
 The app deploys as **one service**: the Express API also serves the built React app, so there's no CORS and a relative `/api` URL. The database is managed PostgreSQL.
 
-- **AWS (EC2 + RDS), the setup used for the live app:** see the step-by-step guide in [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md). The live app at <http://13.54.153.21> is a `t3.micro` EC2 instance with an Elastic IP, running the Docker image, plus an RDS PostgreSQL `db.t4g.micro` database reached privately over SSL.
+- **AWS (EC2 + RDS), the setup used for the live app:** see the step-by-step guide in [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md). The live app at <https://flowboard-bala.duckdns.org> consists of:
+  - a `t3.micro` EC2 instance with an Elastic IP, running the Docker image,
+  - **Caddy** in front of the app, which provides automatic Let's Encrypt HTTPS and redirects HTTP to HTTPS,
+  - a free DuckDNS domain pointing at the Elastic IP,
+  - an RDS PostgreSQL `db.t4g.micro` database, reached privately over SSL.
 - **Docker:** `docker build -t flowboard .`, then run it with `DATABASE_URL` set. The container runs `prisma migrate deploy` and then `node dist/server.js`.
 - **Render (blueprint included):** in the dashboard choose *New → Blueprint*, then pick this repo. [`render.yaml`](render.yaml) creates the web service and a Postgres database and wires up `DATABASE_URL`.
 - **Other hosts** (Railway, Fly.io, …): build with `npm ci && npm run build`, start with `npm run db:deploy && npm start`, and set `DATABASE_URL`.
@@ -249,7 +297,6 @@ The app deploys as **one service**: the Express API also serves the built React 
 **Complete:** every requirement in the brief. That covers the board, CRUD, drag-and-drop with persistence, search and filters, the detail drawer, optimistic updates with rollback, real-time collaboration, and URL state. Field-level conflict detection, failure simulation and presence count are also done.
 
 **Not done / known limitations:**
-- **The live app is served over plain HTTP** at an IP address, with no custom domain or HTTPS certificate.
 - **Single instance only.** The SSE hub and replay buffer are in-process. Running several instances would need a shared bus such as Postgres `LISTEN/NOTIFY` or Redis.
 - The presence count counts **open connections (tabs)**, not distinct people. There's no authentication.
 - Drag moves are last-writer-wins, with no conflict prompt. Only drawer edits are compare-and-set checked.
