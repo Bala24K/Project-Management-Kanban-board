@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Status } from "@kanban/shared";
 import { TaskFields, type TaskFormValues } from "./TaskFields";
-import { XIcon, buttonPrimary, buttonSecondary } from "../../components/ui";
+import { XIcon, buttonPrimary, buttonSecondary, iconButton } from "../../components/ui";
 import type { NewTask } from "../board/useBoard";
 
 type Props = {
@@ -29,9 +29,9 @@ export function CreateTaskDialog({ initialStatus, assigneeSuggestions, onClose, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="create-dialog-heading">
-      <div className="absolute inset-0 bg-slate-900/25 backdrop-blur-[1px]" onClick={onClose} aria-hidden />
+      <div className="animate-fade-in absolute inset-0 bg-overlay backdrop-blur-[2px]" onClick={onClose} aria-hidden />
       <form
-        className="relative w-full max-w-lg rounded-t-2xl bg-white shadow-2xl ring-1 ring-slate-200 sm:rounded-2xl"
+        className="animate-pop-in relative w-full max-w-lg rounded-t-2xl border border-line bg-card shadow-pop sm:rounded-2xl"
         onSubmit={(e) => {
           e.preventDefault();
           if (!values.title.trim()) {
@@ -42,11 +42,11 @@ export function CreateTaskDialog({ initialStatus, assigneeSuggestions, onClose, 
           onClose();
         }}
       >
-        <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 id="create-dialog-heading" className="text-sm font-semibold text-slate-900">
+        <header className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 id="create-dialog-heading" className="text-sm font-semibold tracking-[-0.01em] text-fg">
             New task
           </h2>
-          <button type="button" onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close">
+          <button type="button" onClick={onClose} className={iconButton} aria-label="Close">
             <XIcon className="size-5" />
           </button>
         </header>
@@ -63,7 +63,7 @@ export function CreateTaskDialog({ initialStatus, assigneeSuggestions, onClose, 
             autoFocusTitle
           />
         </div>
-        <footer className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50/60 px-5 py-3 sm:rounded-b-2xl">
+        <footer className="flex justify-end gap-2 border-t border-line bg-panel px-5 py-3 sm:rounded-b-2xl">
           <button type="button" className={buttonSecondary} onClick={onClose}>
             Cancel
           </button>

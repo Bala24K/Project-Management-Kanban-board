@@ -35,10 +35,10 @@ export function TaskFields({ idPrefix, values, onChange, assigneeSuggestions, no
   const id = (f: string) => `${idPrefix}-${f}`;
   return (
     <div className="space-y-4">
-      <Field label="Title" htmlFor={id("title")} hint={titleError ? <p className="mt-1 text-xs text-red-600">{titleError}</p> : notes.title}>
+      <Field label="Title" htmlFor={id("title")} hint={titleError ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">{titleError}</p> : notes.title}>
         <input
           id={id("title")}
-          className={inputClass}
+          className={`${inputClass.replace("text-sm", "text-[15px]")} font-medium`}
           value={values.title}
           maxLength={TITLE_MAX}
           autoFocus={autoFocusTitle}
@@ -50,7 +50,7 @@ export function TaskFields({ idPrefix, values, onChange, assigneeSuggestions, no
       <Field label="Description" htmlFor={id("description")} hint={notes.description}>
         <textarea
           id={id("description")}
-          className={`${inputClass} min-h-28 resize-y`}
+          className={`${inputClass} min-h-28 resize-y leading-relaxed`}
           value={values.description}
           maxLength={DESCRIPTION_MAX}
           onChange={(e) => onChange({ description: e.target.value })}

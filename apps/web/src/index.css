@@ -1,8 +1,98 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+/* `dark:` utilities follow the app theme (data-theme on <html>), not the OS setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                       */
+/* ------------------------------------------------------------------ */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f5f6fb;
+  --panel: #eceef7;
+  --panel-line: #e1e4f0;
+  --card: #ffffff;
+  --card-hover: #ffffff;
+  --input: #ffffff;
+  --line: #e2e5ef;
+  --line-strong: #cdd2e1;
+  --fg: #141726;
+  --muted: #586078;
+  --faint: #868da3;
+  --accent: #6252e8;
+  --accent-strong: #5b4be3;
+  --accent-strong-hover: #4f3fd6;
+  --accent-soft: #efedff;
+  --accent-2: #0e9fc6;
+  --ring: rgb(98 82 232 / 0.35);
+  --overlay: rgb(20 23 38 / 0.28);
+  --header: rgb(255 255 255 / 0.72);
+  --shadow-card: 0 1px 2px rgb(20 23 38 / 0.05), 0 1px 1px rgb(20 23 38 / 0.03);
+  --shadow-card-hover: 0 6px 16px -4px rgb(20 23 38 / 0.1), 0 2px 4px rgb(20 23 38 / 0.05);
+  --shadow-pop: 0 24px 48px -12px rgb(20 23 38 / 0.22), 0 4px 12px rgb(20 23 38 / 0.06);
+  --glow-1: rgb(139 124 255 / 0.12);
+  --glow-2: rgb(69 198 232 / 0.1);
 }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #0b0d14;
+  --panel: rgb(20 24 36 / 0.72);
+  --panel-line: rgb(255 255 255 / 0.06);
+  --card: #1b2030;
+  --card-hover: #202638;
+  --input: #141824;
+  --line: rgb(255 255 255 / 0.08);
+  --line-strong: rgb(255 255 255 / 0.14);
+  --fg: #edf0fa;
+  --muted: #929bb0;
+  --faint: #6b7389;
+  --accent: #8b7cff;
+  --accent-strong: #6e5cf0;
+  --accent-strong-hover: #7d6cf7;
+  --accent-soft: rgb(139 124 255 / 0.14);
+  --accent-2: #45c6e8;
+  --ring: rgb(139 124 255 / 0.45);
+  --overlay: rgb(5 6 10 / 0.6);
+  --header: rgb(11 13 20 / 0.7);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-card-hover: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(139 124 255 / 0.12);
+  --shadow-pop: 0 28px 64px -16px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --glow-1: rgb(139 124 255 / 0.16);
+  --glow-2: rgb(69 198 232 / 0.08);
+}
+
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-panel-line: var(--panel-line);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-input: var(--input);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-strong-hover: var(--accent-strong-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-2: var(--accent-2);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+  --color-header: var(--header);
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-pop: var(--shadow-pop);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
 
 html,
 body,
@@ -11,5 +101,80 @@ body,
 }
 
 body {
-  @apply bg-slate-50 antialiased;
+  @apply antialiased;
+  color: var(--fg);
+  /* Ambient lighting: static gradients only; never intercepts pointer events. */
+  background-color: var(--canvas);
+  background-image:
+    radial-gradient(60rem 36rem at 12% -10%, var(--glow-1), transparent 60%),
+    radial-gradient(48rem 30rem at 95% 0%, var(--glow-2), transparent 60%),
+    radial-gradient(70rem 40rem at 50% 120%, var(--glow-1), transparent 65%);
+  background-attachment: fixed;
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Thin, theme-aware scrollbars inside columns. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* Smooth theme switch: enabled briefly by the theme toggle, so it never
+   slows down drags or other interactions. */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    fill 200ms ease,
+    box-shadow 200ms ease !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                              */
+/* ------------------------------------------------------------------ */
+
+@keyframes fb-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fb-drawer-in {
+  from { opacity: 0.6; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fb-pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fb-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: fb-fade-in 180ms ease-out both; }
+.animate-drawer-in { animation: fb-drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.animate-pop-in { animation: fb-pop-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.animate-toast-in { animation: fb-toast-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }

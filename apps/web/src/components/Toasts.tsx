@@ -35,22 +35,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             role={t.kind === "error" ? "alert" : "status"}
-            className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border bg-white p-3 shadow-lg ${
-              t.kind === "error" ? "border-red-200" : t.kind === "success" ? "border-emerald-200" : "border-slate-200"
+            className={`animate-toast-in pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border bg-card p-3 shadow-pop ${
+              t.kind === "error"
+                ? "border-red-300/60 dark:border-red-400/30"
+                : t.kind === "success"
+                  ? "border-emerald-300/60 dark:border-emerald-400/30"
+                  : "border-line"
             }`}
           >
             <span
               className={`mt-1.5 size-2 shrink-0 rounded-full ${
-                t.kind === "error" ? "bg-red-500" : t.kind === "success" ? "bg-emerald-500" : "bg-indigo-500"
+                t.kind === "error" ? "bg-red-500" : t.kind === "success" ? "bg-emerald-500" : "bg-accent"
               }`}
             />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-slate-900">{t.title}</p>
-              {t.message && <p className="mt-0.5 text-sm text-slate-600">{t.message}</p>}
+              <p className="text-sm font-medium text-fg">{t.title}</p>
+              {t.message && <p className="mt-0.5 text-sm text-muted">{t.message}</p>}
             </div>
             <button
               onClick={() => dismiss(t.id)}
-              className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="rounded p-0.5 text-faint transition duration-150 hover:bg-accent-soft hover:text-fg"
               aria-label="Dismiss notification"
             >
               <svg viewBox="0 0 20 20" className="size-4" fill="currentColor" aria-hidden>

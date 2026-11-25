@@ -16,12 +16,17 @@ The app runs on AWS: an EC2 server in Sydney running Docker, with an RDS Postgre
 - Real-time sync with mutation-aware reconciliation, so remote events never clobber your pending changes
 - Field-level conflict detection (HTTP 409) for concurrent edits of the same field
 - A development and demo failure switch for seeing rollbacks
+- Dark theme by default and a light theme. The header toggle switches between them, and the choice is remembered across visits.
 
 ## Screenshots
 
-**Board:** four columns, priority badges, assignees and last-updated times.
+**Board (dark theme, the default):** four columns, priority badges, assignees and last-updated times.
 
 ![Board](docs/screenshots/board.png)
+
+**Light theme:** switch with the sun/moon button in the header.
+
+![Board in light theme](docs/screenshots/board-light.png)
 
 **Real-time collaboration:** a task created in one browser appears in the other instantly, without a reload.
 
@@ -56,6 +61,7 @@ Open **<https://flowboard-bala.duckdns.org>** in **two browser windows** side by
 | 9 | Concurrent edit | In window A, open a task and change its title without saving. In window B, rename the same task and save. | Window A keeps your typed text and shows "Someone else changed this… Use theirs". Saving in A shows a conflict message. |
 | 10 | Remote delete | Open a task in window A, then delete it in window B | Window A's drawer says "This task was deleted" |
 | 11 | Reconnect | Turn off your Wi-Fi for a few seconds, then turn it back on | The indicator shows **Reconnecting…**, then **Live**, and changes made meanwhile appear |
+| 12 | Theme | Click the sun/moon button in the header, then refresh | The app switches between dark and light, and stays on your choice after the refresh |
 
 ### Command cheat-sheet
 
@@ -325,7 +331,7 @@ Documentation-only pushes (`*.md`, `docs/`) skip the pipeline. Setup takes two r
 **Claude Code** (Anthropic) was used as a coding agent, mainly for frontend work:
 
 - React UI components: board, columns, task cards, task detail drawer, create-task dialog, filter bar, connection indicator, toasts and loading skeletons.
-- Tailwind CSS styling and responsive layout.
+- Tailwind CSS styling, the dark/light theme system (CSS design tokens), visual polish and responsive layout.
 - dnd-kit drag-and-drop wiring: pointer and keyboard sensors, insertion placeholder and drag overlay.
 - Frontend component tests (Vitest + Testing Library).
 

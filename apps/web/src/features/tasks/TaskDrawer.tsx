@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { EDITABLE_FIELDS, STATUS_LABELS, type Task } from "@kanban/shared";
 import type { TaskChanges } from "../board/boardState";
 import { TaskFields, type TaskFormValues } from "./TaskFields";
-import { TrashIcon, XIcon, buttonPrimary, buttonSecondary } from "../../components/ui";
+import { STATUS_ACCENT, TrashIcon, XIcon, buttonPrimary, buttonSecondary, iconButton } from "../../components/ui";
 import { relativeTime } from "../../lib/time";
 
 type Props = {
@@ -88,7 +88,7 @@ export function TaskDrawer({ task, assigneeSuggestions, onClose, onSave, onDelet
 
   const remoteNote = (f: keyof TaskFormValues) =>
     remoteChanged[f] && task ? (
-      <p className="mt-1 text-xs text-amber-700">
+      <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-300">
         Someone else changed this to “{f === "status" ? STATUS_LABELS[task.status] : String(task[f]) || "empty"}”.{" "}
         <button
           type="button"
@@ -106,28 +106,29 @@ export function TaskDrawer({ task, assigneeSuggestions, onClose, onSave, onDelet
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
-      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[1px]" onClick={onClose} aria-hidden />
-      <aside className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-2xl ring-1 ring-slate-200">
-        <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+      <div className="animate-fade-in absolute inset-0 bg-overlay backdrop-blur-[2px]" onClick={onClose} aria-hidden />
+      <aside className="animate-drawer-in absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-line bg-card shadow-pop">
+        <header className="flex items-center justify-between border-b border-line px-5 py-4">
           <div>
-            <h2 id="drawer-title" className="text-sm font-semibold text-slate-900">
+            <h2 id="drawer-title" className="text-sm font-semibold tracking-[-0.01em] text-fg">
               Task details
             </h2>
             {task && (
-              <p className="mt-0.5 text-xs text-slate-500">
-                Updated {relativeTime(task.updatedAt)} · {STATUS_LABELS[task.status]}
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                <span className={`size-1.5 rounded-full ${STATUS_ACCENT[task.status]}`} aria-hidden />
+                {STATUS_LABELS[task.status]} · Updated {relativeTime(task.updatedAt)}
               </p>
             )}
           </div>
-          <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close details">
+          <button onClick={onClose} className={iconButton} aria-label="Close details">
             <XIcon className="size-5" />
           </button>
         </header>
 
         {deleted || !values ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-            <p className="text-sm font-medium text-slate-900">This task was deleted</p>
-            <p className="text-sm text-slate-500">Someone else removed it while you were viewing it.</p>
+            <p className="text-sm font-medium text-fg">This task was deleted</p>
+            <p className="text-sm text-muted">Someone else removed it while you were viewing it.</p>
             <button className={buttonSecondary} onClick={onClose}>
               Close
             </button>
@@ -160,13 +161,13 @@ export function TaskDrawer({ task, assigneeSuggestions, onClose, onSave, onDelet
                 }}
               />
             </form>
-            <footer className="flex items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/60 px-5 py-3">
+            <footer className="flex items-center justify-between gap-2 border-t border-line bg-panel px-5 py-3">
               {confirmDelete ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-600">Delete this task?</span>
+                  <span className="text-xs text-muted">Delete this task?</span>
                   <button
                     type="button"
-                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-500"
+                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white transition duration-150 hover:bg-red-500 active:scale-[0.97]"
                     onClick={() => {
                       onDelete();
                       onClose();
@@ -174,14 +175,14 @@ export function TaskDrawer({ task, assigneeSuggestions, onClose, onSave, onDelet
                   >
                     Delete
                   </button>
-                  <button type="button" className="text-sm text-slate-600 hover:text-slate-900" onClick={() => setConfirmDelete(false)}>
+                  <button type="button" className="rounded-md px-2 py-1.5 text-sm text-muted transition duration-150 hover:text-fg" onClick={() => setConfirmDelete(false)}>
                     Cancel
                   </button>
                 </div>
               ) : (
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-red-600 transition duration-150 hover:bg-red-50 active:scale-[0.97] dark:text-red-400 dark:hover:bg-red-500/10"
                   onClick={() => setConfirmDelete(true)}
                 >
                   <TrashIcon className="size-4" /> Delete

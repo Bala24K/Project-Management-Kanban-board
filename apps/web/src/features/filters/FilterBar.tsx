@@ -10,8 +10,10 @@ type Props = {
   totalCount: number;
 };
 
-const selectClass =
-  "h-9 rounded-lg border-0 bg-white py-0 pr-8 pl-3 text-sm text-slate-700 shadow-xs ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 outline-none";
+const selectClass = (active: boolean) =>
+  `h-9 cursor-pointer rounded-lg border py-0 pr-8 pl-3 text-sm shadow-xs outline-none transition-[border-color,box-shadow,background-color] duration-150 focus:border-accent focus:ring-3 focus:ring-ring ${
+    active ? "border-accent/50 bg-accent-soft font-medium text-fg" : "border-line bg-input text-muted hover:border-line-strong"
+  }`;
 
 export function FilterBar({ filters, onChange, assignees, matchCount, totalCount }: Props) {
   const active = isFiltering(filters);
@@ -28,7 +30,7 @@ export function FilterBar({ filters, onChange, assignees, matchCount, totalCount
   return (
     <div className="flex flex-wrap items-center gap-2" role="search">
       <div className="relative w-full sm:w-64">
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-slate-400" />
+        <SearchIcon className={`pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 ${filters.search ? "text-accent" : "text-faint"}`} />
         <input
           type="search"
           aria-label="Search tasks by title"
@@ -36,12 +38,12 @@ export function FilterBar({ filters, onChange, assignees, matchCount, totalCount
           value={filters.search}
           // First keystroke creates a history entry; subsequent ones replace it.
           onChange={(e) => onChange({ search: e.target.value }, filters.search === "" ? "push" : "replace")}
-          className="h-9 w-full rounded-lg border-0 bg-white pr-3 pl-8 text-sm text-slate-900 shadow-xs ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600 outline-none"
+          className={`h-9 w-full rounded-lg border pr-3 pl-8 text-sm text-fg shadow-xs outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-faint focus:border-accent focus:ring-3 focus:ring-ring ${filters.search ? "border-accent/50 bg-accent-soft" : "border-line bg-input hover:border-line-strong"}`}
         />
       </div>
       <select
         aria-label="Filter by priority"
-        className={selectClass}
+        className={selectClass(filters.priority !== "")}
         value={filters.priority}
         onChange={(e) => onChange({ priority: e.target.value as Priority | "" })}
       >
@@ -54,7 +56,7 @@ export function FilterBar({ filters, onChange, assignees, matchCount, totalCount
       </select>
       <select
         aria-label="Filter by assignee"
-        className={selectClass}
+        className={selectClass(filters.assignee !== "")}
         value={selectedAssignee}
         onChange={(e) => onChange({ assignee: e.target.value })}
       >
@@ -70,11 +72,11 @@ export function FilterBar({ filters, onChange, assignees, matchCount, totalCount
         <>
           <button
             onClick={() => onChange(EMPTY_FILTERS)}
-            className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-sm font-medium text-slate-600 hover:bg-slate-200/60 hover:text-slate-900"
+            className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-sm font-medium text-muted transition duration-150 hover:bg-accent-soft hover:text-fg active:scale-[0.97]"
           >
             <XIcon className="size-4" /> Clear
           </button>
-          <span className="text-xs text-slate-500" data-testid="match-count">
+          <span className="text-xs text-faint tabular-nums" data-testid="match-count">
             {matchCount} of {totalCount} tasks
           </span>
         </>

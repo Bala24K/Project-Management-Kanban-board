@@ -169,6 +169,7 @@ export function Board({ columns, visible, filtering, savingIds, onMove, onOpen, 
             filtering={filtering}
             savingIds={savingIds}
             now={now}
+            isDropTarget={activeId !== null && shown[s].some((t) => t.id === activeId)}
             onOpen={onOpen}
             onAdd={onAdd}
           />

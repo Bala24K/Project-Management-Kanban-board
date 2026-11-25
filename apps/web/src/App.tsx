@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { STATUSES, type Status } from "@kanban/shared";
 import { ToastProvider } from "./components/Toasts";
-import { PlusIcon, buttonPrimary, buttonSecondary } from "./components/ui";
+import { MoonIcon, PlusIcon, SunIcon, buttonPrimary, buttonSecondary } from "./components/ui";
 import { Board } from "./features/board/Board";
 import { BoardSkeleton } from "./features/board/BoardSkeleton";
 import { findTask, useBoard } from "./features/board/useBoard";
@@ -12,6 +12,7 @@ import { useUrlFilters } from "./features/filters/useUrlFilters";
 import { CreateTaskDialog } from "./features/tasks/CreateTaskDialog";
 import { TaskDrawer } from "./features/tasks/TaskDrawer";
 import { api, getSimulateFailures, setSimulateFailures } from "./lib/api";
+import { useTheme } from "./lib/theme";
 
 export default function App() {
   return (
@@ -39,11 +40,14 @@ function BoardPage() {
   const closeCreate = useCallback(() => setCreateIn(null), []);
 
   return (
-    <div className="flex h-dvh flex-col bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="flex h-dvh flex-col text-fg">
+      <header className="relative z-20 border-b border-line bg-header backdrop-blur-md">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 shadow-sm" aria-hidden>
+            <div
+              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-[#8b7cff] to-[#5b4be3] shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_4px_12px_-2px_rgb(91_75_227/0.45)]"
+              aria-hidden
+            >
               <svg viewBox="0 0 32 32" className="size-5">
                 <rect x="6" y="7" width="5" height="18" rx="2" fill="white" />
                 <rect x="13.5" y="7" width="5" height="11" rx="2" fill="white" opacity=".85" />
@@ -51,19 +55,22 @@ function BoardPage() {
               </svg>
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold tracking-wide text-indigo-600 uppercase">Flowboard</p>
-              <h1 className="truncate text-base leading-tight font-semibold text-slate-900">{board.boardTitle || "Board"}</h1>
+              <p className="text-[11px] leading-none font-semibold tracking-[0.08em] text-accent uppercase">Flowboard</p>
+              <h1 className="mt-1 truncate text-[17px] leading-tight font-semibold tracking-[-0.015em] text-fg">
+                {board.boardTitle || "Board"}
+              </h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <FailureToggle />
             <ConnectionIndicator state={board.connection} connections={board.connections} />
+            <ThemeToggle />
             <button className={buttonPrimary} onClick={() => setCreateIn("backlog")}>
               <PlusIcon className="size-4" /> New task
             </button>
           </div>
         </div>
-        <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-2.5 sm:px-6">
+        <div className="border-t border-line px-4 py-2.5 sm:px-6">
           <FilterBar filters={filters} onChange={setFilters} assignees={assignees} matchCount={matchCount} totalCount={totalCount} />
         </div>
       </header>
@@ -71,9 +78,9 @@ function BoardPage() {
       <main className="min-h-0 flex-1 px-4 pt-4 pb-2 sm:px-6">
         {board.phase === "loading" && <BoardSkeleton />}
         {board.phase === "error" && (
-          <div className="mx-auto mt-16 max-w-sm rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm" role="alert">
-            <p className="text-sm font-semibold text-slate-900">Couldn't load the board</p>
-            <p className="mt-1 text-sm text-slate-600">{board.loadError}</p>
+          <div className="animate-pop-in mx-auto mt-16 max-w-sm rounded-2xl border border-red-300/60 bg-card p-6 text-center shadow-pop dark:border-red-400/30" role="alert">
+            <p className="text-sm font-semibold text-fg">Couldn't load the board</p>
+            <p className="mt-1 text-sm text-muted">{board.loadError}</p>
             <button className={`${buttonSecondary} mt-4`} onClick={board.retryLoad}>
               Try again
             </button>
@@ -127,8 +134,10 @@ function FailureToggle() {
   if (!available) return null;
   return (
     <label
-      className={`hidden h-8 cursor-pointer items-center gap-2 rounded-full px-3 text-xs font-medium ring-1 select-none sm:inline-flex ${
-        on ? "bg-red-50 text-red-700 ring-red-200" : "bg-white text-slate-600 ring-slate-200"
+      className={`hidden h-8 cursor-pointer items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors duration-150 select-none sm:inline-flex ${
+        on
+          ? "border-red-300/70 bg-red-50 text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300"
+          : "border-line bg-card text-muted hover:text-fg"
       }`}
       title="Development aid: make every create/update/delete/move request fail so you can see the rollback."
     >
@@ -144,5 +153,23 @@ function FailureToggle() {
       />
       Simulate API failures
     </label>
+  );
+}
+
+/** Dark / light switch; the choice persists in localStorage. */
+function ThemeToggle() {
+  const [theme, toggle] = useTheme();
+  const next = theme === "dark" ? "light" : "dark";
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      className="inline-flex size-8 items-center justify-center rounded-full border border-line bg-card text-muted transition duration-150 hover:border-line-strong hover:text-fg active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      aria-label={`Switch to ${next} theme`}
+      title={`Switch to ${next} theme`}
+      data-testid="theme-toggle"
+    >
+      {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
+    </button>
   );
 }
