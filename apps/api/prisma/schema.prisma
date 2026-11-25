@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+enum Status {
+  backlog
+  todo
+  in_progress
+  done
+}
+
+/// Single board row. Its `revision` is bumped at the start of every write
+/// transaction: the row lock serialises writers and the value is a monotonic
+/// sequence used as the SSE event id and for client-side staleness checks.
+model Board {
+  id       String @id
+  title    String @db.VarChar(120)
+  revision Int    @default(0)
+}
+
+model Task {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(200)
+  description String   @default("")
+  priority    Priority @default(medium)
+  assignee    String   @default("") @db.VarChar(60)
+  status      Status   @default(backlog)
+  /// Dense 0-based order within the column, maintained transactionally.
+  position    Int
+  /// Board revision of the last explicit modification of this task.
+  revision    Int      @default(0)
+  createdAt   DateTime @default(now())
+  /// Set explicitly by the service; renumbering other tasks does not touch it.
+  updatedAt   DateTime @default(now())
+
+  @@index([status, position])
+}

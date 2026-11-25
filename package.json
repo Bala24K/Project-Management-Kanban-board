@@ -1,0 +1,24 @@
+{
+  "name": "kanban-board",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/shared", "apps/api", "apps/web"],
+  "scripts": {
+    "postinstall": "npm run build -w @kanban/shared",
+    "dev": "npm run build -w @kanban/shared && concurrently -n api,web -c blue,magenta \"npm run dev -w @kanban/api\" \"npm run dev -w @kanban/web\"",
+    "build": "npm run build -w @kanban/shared && npm run build -w @kanban/web && npm run build -w @kanban/api",
+    "start": "npm run start -w @kanban/api",
+    "db:migrate": "npm run db:migrate -w @kanban/api",
+    "db:deploy": "npm run db:deploy -w @kanban/api",
+    "db:seed": "npm run db:seed -w @kanban/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w @kanban/api && npm run test -w @kanban/web",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "concurrently": "^9.2.0",
+    "typescript": "5.9.3"
+  },
+  "engines": { "node": ">=20" }
+}
