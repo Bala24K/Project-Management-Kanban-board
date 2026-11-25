@@ -1,0 +1,110 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**"]
+  pull_request:
+    paths-ignore: ["**.md", "docs/**"]
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+permissions:
+  contents: read
+
+env:
+  APP_URL: https://flowboard-bala.duckdns.org
+
+jobs:
+  test:
+    name: Typecheck + tests (real Postgres)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kanban
+          POSTGRES_PASSWORD: kanban
+          POSTGRES_DB: kanban
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U kanban"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://kanban:kanban@localhost:5432/kanban?schema=public
+      TEST_DATABASE_URL: postgresql://kanban:kanban@localhost:5432/kanban_test?schema=public
+      E2E_DATABASE_URL: postgresql://kanban:kanban@localhost:5432/kanban_e2e?schema=public
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Create test databases
+        run: |
+          PGPASSWORD=kanban psql -h localhost -U kanban -d kanban \
+            -c "CREATE DATABASE kanban_test" -c "CREATE DATABASE kanban_e2e"
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: API + web tests
+        run: npm test
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests (real API + DB, two browser clients)
+        run: npm run test:e2e
+
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to AWS EC2
+    needs: test
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Never run two deploys at once; queue them instead.
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          if [ -z "$SSH_KEY" ] || [ -z "$HOST" ]; then
+            echo "::error::Missing EC2_SSH_KEY or EC2_HOST repository secret (see docs/DEPLOY_AWS.md, Step 10)."
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 \
+            "ec2-user@$HOST" "bash -s -- $GITHUB_SHA" < scripts/deploy.sh
+
+      - name: Smoke test public URL
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS "$APP_URL/api/health"; then echo; echo "Live at $APP_URL"; exit 0; fi
+            sleep 3
+          done
+          echo "::error::$APP_URL/api/health did not respond"
+          exit 1

@@ -159,9 +159,49 @@ HTTPS certificates are issued for domain names, not bare IP addresses, so you ne
 
 ---
 
-## Updating after you push new code
+## Step 10 (optional): Automatic deploys with GitHub Actions
 
-From the EC2 terminal (Step 3), rebuild and restart only the app container. Caddy keeps running.
+After this one-time setup, every push to `main` that changes code runs the tests, and if they pass, deploys automatically. Pushes that only touch `*.md` files or `docs/` are skipped.
+
+**A. Create a deploy key on the server.** In the EC2 browser terminal:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/github_deploy -N "" -C github-actions
+cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/github_deploy
+```
+
+The last command prints the private key. Select **everything** from `-----BEGIN OPENSSH PRIVATE KEY-----` to `-----END OPENSSH PRIVATE KEY-----`, including those two lines, and copy it.
+
+**B. Add two secrets to GitHub.** In your repo, go to **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Name | Value |
+| --- | --- |
+| `EC2_SSH_KEY` | the private key you just copied |
+| `EC2_HOST` | your Elastic IP, e.g. `13.54.153.21` |
+
+**C. Delete the private key from the server.** GitHub has it now, and the server only needs the public half:
+
+```bash
+rm ~/.ssh/github_deploy
+```
+
+**D. Push.** Open the **Actions** tab on GitHub to watch the **CI/CD** workflow:
+
+- the **test** job runs typecheck, the API and web tests, and the browser tests against a throwaway Postgres;
+- the **deploy** job SSHes into the server and runs [`scripts/deploy.sh`](../scripts/deploy.sh). The script builds the tested commit while the old version keeps serving, swaps the container, waits for `/api/health`, and rolls back to the previous image if the new one fails. It then checks the public URL.
+
+You can also redeploy without pushing: **Actions → CI/CD → Run workflow**.
+
+> Notes:
+> - The workflow assumes the Caddy/HTTPS setup from Step 9: the app listens on `127.0.0.1:4000`. If you skipped Step 9, change `PORTS` in `scripts/deploy.sh` to `80:4000`, and `APP_URL` in the workflow to `http://<your-ip>`.
+> - The repo must stay **public** so the server can `git fetch`. A private repo would need a GitHub deploy key on the server.
+
+---
+
+## Updating manually
+
+If you'd rather not use GitHub Actions, run this from the EC2 terminal (Step 3). It rebuilds and restarts only the app container; Caddy keeps running.
 
 ```bash
 cd ~/flowboard && git pull

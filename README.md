@@ -2,6 +2,8 @@
 
 A real-time collaborative Kanban board. Several people can work on the same board at once: changes appear instantly for the person making them (optimistic UI) and stream to everyone else over Server-Sent Events, without reloading the page.
 
+[![CI/CD](https://github.com/Bala24K/Project-Management-Kanban-board/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Bala24K/Project-Management-Kanban-board/actions/workflows/ci-cd.yml)
+
 **Live app:** **<https://flowboard-bala.duckdns.org>**
 
 The app runs on AWS: an EC2 server in Sydney running Docker, with an RDS PostgreSQL database, served over HTTPS. Open it in two browser windows to see changes sync in real time. Use the **Simulate API failures** switch in the header to see rollback. [How to try it](#try-it-as-a-user) walks through each feature.
@@ -289,6 +291,21 @@ The app deploys as **one service**: the Express API also serves the built React 
 - **Docker:** `docker build -t flowboard .`, then run it with `DATABASE_URL` set. The container runs `prisma migrate deploy` and then `node dist/server.js`.
 - **Render (blueprint included):** in the dashboard choose *New → Blueprint*, then pick this repo. [`render.yaml`](render.yaml) creates the web service and a Postgres database and wires up `DATABASE_URL`.
 - **Other hosts** (Railway, Fly.io, …): build with `npm ci && npm run build`, start with `npm run db:deploy && npm start`, and set `DATABASE_URL`.
+
+### CI/CD (GitHub Actions)
+
+[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) runs on every push and pull request:
+
+1. **test:** `npm ci`, typecheck, the API and web tests against a Postgres service container, then the Playwright e2e suite. Traces are uploaded if a test fails.
+2. **deploy** (only on `main`, after the tests pass): SSHes into the EC2 server and runs [`scripts/deploy.sh`](scripts/deploy.sh) for the exact tested commit. The script:
+   - builds the new image while the old version keeps serving,
+   - swaps the container,
+   - waits for `/api/health`,
+   - **rolls back automatically** if the new version is unhealthy.
+
+   The job then checks the public URL. Deploys never overlap.
+
+Documentation-only pushes (`*.md`, `docs/`) skip the pipeline. Setup takes two repository secrets, `EC2_SSH_KEY` and `EC2_HOST`; see [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md#step-10-optional-automatic-deploys-with-github-actions).
 
 **SSE through proxies:** responses set `Cache-Control: no-cache, no-transform` and `X-Accel-Buffering: no`. The heartbeat keeps idle connections alive, and the browser reconnects automatically with `Last-Event-ID`.
 

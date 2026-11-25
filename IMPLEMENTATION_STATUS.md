@@ -22,6 +22,7 @@ _Last updated: 2026-11-25_
 | Dev-only failure simulation | Done | API + App tests, e2e |
 | Loading skeleton, empty states, responsive layout, presence | Done | manual screenshots (desktop + 390px mobile) |
 | Production build served by API; Docker image; Render blueprint | Done | Docker image run locally against Postgres |
+| CI/CD: GitHub Actions (tests, then SSH deploy to EC2 with health check and rollback) | Added; first run pending | Workflow YAML and `scripts/deploy.sh` syntax validated locally; the first real run happens on the next push |
 
 ## In progress
 
