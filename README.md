@@ -2,7 +2,9 @@
 
 A real-time collaborative Kanban board. Several people can work on the same board at once: changes appear instantly for the person making them (optimistic UI) and stream to everyone else over Server-Sent Events, without reloading the page.
 
-**Deployed app:** _not deployed yet. See [Deployment](#deployment). The Docker image and Render blueprint are ready and tested locally._
+**Live app:** **<http://13.54.153.21>**
+
+The app runs on AWS: an EC2 server in Sydney running Docker, with an RDS PostgreSQL database. Open it in two browser windows to see changes sync in real time. Use the **Simulate API failures** switch in the header to see rollback.
 
 - Four columns in fixed order: **Backlog → Todo → In Progress → Done**
 - Create, edit, and delete tasks. Click a card to edit it in a detail drawer.
@@ -235,7 +237,7 @@ Create both databases once (`CREATE DATABASE kanban_test; CREATE DATABASE kanban
 
 The app deploys as **one service**: the Express API also serves the built React app, so there's no CORS and a relative `/api` URL. The database is managed PostgreSQL.
 
-- **AWS (EC2 + RDS):** see the step-by-step guide in [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md).
+- **AWS (EC2 + RDS), the setup used for the live app:** see the step-by-step guide in [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md). The live app at <http://13.54.153.21> is a `t3.micro` EC2 instance with an Elastic IP, running the Docker image, plus an RDS PostgreSQL `db.t4g.micro` database reached privately over SSL.
 - **Docker:** `docker build -t flowboard .`, then run it with `DATABASE_URL` set. The container runs `prisma migrate deploy` and then `node dist/server.js`.
 - **Render (blueprint included):** in the dashboard choose *New → Blueprint*, then pick this repo. [`render.yaml`](render.yaml) creates the web service and a Postgres database and wires up `DATABASE_URL`.
 - **Other hosts** (Railway, Fly.io, …): build with `npm ci && npm run build`, start with `npm run db:deploy && npm start`, and set `DATABASE_URL`.
@@ -247,7 +249,7 @@ The app deploys as **one service**: the Express API also serves the built React 
 **Complete:** every requirement in the brief. That covers the board, CRUD, drag-and-drop with persistence, search and filters, the detail drawer, optimistic updates with rollback, real-time collaboration, and URL state. Field-level conflict detection, failure simulation and presence count are also done.
 
 **Not done / known limitations:**
-- **Not deployed yet.** A public URL needs a hosting account. The Docker image is built and verified locally against Postgres.
+- **The live app is served over plain HTTP** at an IP address, with no custom domain or HTTPS certificate.
 - **Single instance only.** The SSE hub and replay buffer are in-process. Running several instances would need a shared bus such as Postgres `LISTEN/NOTIFY` or Redis.
 - The presence count counts **open connections (tabs)**, not distinct people. There's no authentication.
 - Drag moves are last-writer-wins, with no conflict prompt. Only drawer edits are compare-and-set checked.

@@ -29,7 +29,7 @@ _Last updated: 2026-11-25_
 
 ## Remaining work
 
-- **Deploy to a public URL.** This needs a hosting account (Render blueprint included), and the URL then goes in the README.
+- Optional: a custom domain and HTTPS for the live app.
 
 ## Known bugs / limitations
 
@@ -51,4 +51,12 @@ _Last updated: 2026-11-25_
 
 ## Deployment status
 
-Not deployed. The artefacts are ready and verified locally: the `Dockerfile`, `render.yaml`, and `npm run db:deploy && npm start`.
+**Deployed: <http://13.54.153.21>** on AWS (ap-southeast-2):
+- an EC2 `t3.micro` instance with an Elastic IP, running the Docker image,
+- an RDS PostgreSQL `db.t4g.micro` database, private and reached over SSL.
+
+Checked on the public URL:
+- `/api/health` responds,
+- `/api/board` serves data from RDS,
+- the SSE stream connects (`hello` and `presence` events),
+- the board UI loads in the browser with the live-connection indicator showing "Live".
